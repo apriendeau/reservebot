@@ -297,11 +297,14 @@ func (h *Handler) announce(ea *EventAction, user *models.User, msg string) error
 }
 
 func (h *Handler) sendDM(user *models.User, msg string) error {
-	_, _, c, err := h.client.OpenIMChannel(user.ID)
+	params := &slack.OpenConversationParameters{
+		Users: []string{user.ID},
+	}
+	c, _, _, err := h.client.OpenConversation(params)
 	if err != nil {
 		return err
 	}
-	_, _, err = h.client.PostMessage(c, slack.MsgOptionText(msg, false))
+	_, _, err = h.client.PostMessage(c.ID, slack.MsgOptionText(msg, false))
 	return err
 }
 

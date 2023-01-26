@@ -75,6 +75,11 @@ func main() {
 
 	handler := handler.New(api, data, reqResourceEnv, util.ParseAdmins(admins))
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(""))
+	})
+
 	http.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(r.Body)
