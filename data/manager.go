@@ -21,4 +21,5 @@ type Manager interface {
 	RemoveResource(name string, env string) error
 	Reserve(u *models.User, name string, env string) error
 	ClearQueueForResource(name, env string) error
+	PruneInactiveResources(hours int) error
 }
