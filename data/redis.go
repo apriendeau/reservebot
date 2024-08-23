@@ -85,7 +85,12 @@ func (m *Redis) GetRedisReservations() []*models.Reservation {
 
 	str, err := m.rdb.Get(context.Background(), reservationsKey).Result()
 	if err != nil {
-		panic(err)
+		m.SetRedisReservations([]*models.Reservation{})
+
+		str, err = m.rdb.Get(context.Background(), reservationsKey).Result()
+		if err != nil {
+			panic(err)
+		}
 	}
 	if err := json.Unmarshal([]byte(str), res); err != nil {
 		panic(err)
@@ -106,7 +111,9 @@ func (m *Redis) SetRedisReservations(res []*models.Reservation) []*models.Reserv
 	if err := m.rdb.Set(context.Background(), reservationsKey, string(b), 0).Err(); err != nil {
 		panic(err)
 	}
-
+	if reservations.Reservations == nil {
+		reservations.Reservations = make([]*models.Reservation, 0)
+	}
 	return reservations.Reservations
 }
 
@@ -114,10 +121,18 @@ func (m *Redis) GetRedisResources() map[string]*models.Resource {
 	res := &RedisResources{}
 	str, err := m.rdb.Get(context.Background(), resourcesKey).Result()
 	if err != nil {
-		panic(err)
+		m.SetRedisResources(map[string]*models.Resource{})
+
+		str, err = m.rdb.Get(context.Background(), resourcesKey).Result()
+		if err != nil {
+			panic(err)
+		}
 	}
 	if err := json.Unmarshal([]byte(str), res); err != nil {
 		panic(err)
+	}
+	if res.Resources == nil {
+		res.Resources = make(map[string]*models.Resource, 0)
 	}
 	return res.Resources
 }

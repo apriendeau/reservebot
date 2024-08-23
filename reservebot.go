@@ -75,7 +75,6 @@ func main() {
 	d = data.NewMemory()
 	if useRedis {
 		log.Infof("Redis Enabled")
-		log.Infof(redisPass)
 		d = data.NewRedis(redisAddr, redisPass, redisDB)
 	}
 	if pruneEnabled {
