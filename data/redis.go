@@ -155,13 +155,13 @@ func (m *Redis) SetRedisResources(res map[string]*models.Resource) map[string]*m
 }
 
 func (m *Redis) GetReservation(u *models.User, name, env string) *models.Reservation {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return nil
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	reservations := m.GetRedisReservations()
 	for _, res := range reservations {
@@ -178,13 +178,14 @@ func (m *Redis) GetReservation(u *models.User, name, env string) *models.Reserva
 // If the removal advances the queue, the new resource holder's reservation will have the time updated
 func (m *Redis) Remove(u *models.User, name, env string) error {
 	// minor optimization: if the resource doesn't exist, there's no need to loop through all reservations
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return err.ResourceDoesNotExist
 	}
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
 	reservations := m.GetRedisReservations()
 
 	idx := -1
@@ -221,13 +222,13 @@ func (m *Redis) Remove(u *models.User, name, env string) error {
 }
 
 func (m *Redis) GetPosition(u *models.User, name, env string) (int, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return 0, err.ResourceDoesNotExist
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	pos := 0
 	inQueue := false
@@ -270,13 +271,14 @@ func (m *Redis) GetResource(name, env string, create bool) *models.Resource {
 }
 
 func (m *Redis) RemoveResource(name, env string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return err.ResourceDoesNotExist
 	}
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
 	reservations := m.GetRedisReservations()
 	resources := m.GetRedisResources()
 
@@ -285,6 +287,7 @@ func (m *Redis) RemoveResource(name, env string) error {
 			reservations = append(reservations[:idx], reservations[idx+1:]...)
 		}
 	}
+
 	m.SetRedisReservations(reservations)
 	delete(resources, r.Key())
 	m.SetRedisResources(resources)
@@ -295,6 +298,7 @@ func (m *Redis) RemoveResource(name, env string) error {
 func (m *Redis) RemoveEnv(name, env string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
 	reservations := m.GetRedisReservations()
 	resources := m.GetRedisResources()
 
@@ -357,6 +361,8 @@ func (m *Redis) GetQueues() []*models.Queue {
 }
 
 func (m *Redis) GetQueueForResource(name, env string) (*models.Queue, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	// minor optimization
 	r := m.GetResource(name, env, false)
 	if r == nil {
@@ -366,9 +372,6 @@ func (m *Redis) GetQueueForResource(name, env string) (*models.Queue, error) {
 	ret := &models.Queue{
 		Resource: r,
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	reservations := m.GetRedisReservations()
 	for _, res := range reservations {
@@ -382,13 +385,13 @@ func (m *Redis) GetQueueForResource(name, env string) (*models.Queue, error) {
 
 func (m *Redis) GetReservationForResource(name, env string) (*models.Reservation, error) {
 	// minor optimization
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return nil, err.ResourceDoesNotExist
 	}
-
-	m.lock.Lock()
-	defer m.lock.Unlock()
 
 	reservations := m.GetRedisReservations()
 	for _, res := range reservations {
@@ -454,14 +457,14 @@ func (m *Redis) GetAllUsersInQueues() []*models.User {
 }
 
 func (m *Redis) ClearQueueForResource(name, env string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	// minor optimization
 	r := m.GetResource(name, env, false)
 	if r == nil {
 		return err.ResourceDoesNotExist
 	}
 
-	m.lock.Lock()
-	defer m.lock.Unlock()
 	reservations := m.GetRedisReservations()
 	filtered := []*models.Reservation{}
 	for _, res := range reservations {
